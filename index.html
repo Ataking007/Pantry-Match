@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pantry Match - Cook with what you have</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --leaf: #2E5E3A;
+  --leaf-soft: #DCE8D6;
+  --ink: #1C2B20;
+  --paper: #F3F6EE;
+  --mustard: #E8B931;
+  --tomato: #C63D2B;
+  --muted: #5C6B5F;
+  --white: #FFFFFF;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Nunito Sans", "Segoe UI", Arial, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+}
+h1, h2, h3 { font-family: "Bricolage Grotesque", "Arial Black", Arial, sans-serif; line-height: 1.1; margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+header { padding: 22px 0 8px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 52px; height: 52px; flex-shrink: 0; }
+.brand-name { font-family: "Bricolage Grotesque", Arial, sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--leaf); }
+
+.hero { padding: 28px 0 10px; }
+.hero h1 { font-size: clamp(2.2rem, 6vw, 3.8rem); font-weight: 800; max-width: 14ch; }
+.hero p { font-size: 1.1rem; color: var(--muted); max-width: 52ch; margin: 14px 0 0; }
+
+.pantry { background: var(--white); border-radius: 22px; padding: 22px; margin: 26px 0; border: 2px solid var(--leaf-soft); }
+.pantry-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pantry-top h2 { font-size: 1.35rem; }
+.search { flex: 1 1 220px; max-width: 320px; padding: 11px 14px; border: 2px solid var(--leaf-soft); border-radius: 12px; font: inherit; }
+.search:focus { outline: 3px solid var(--mustard); border-color: var(--leaf); }
+.group { margin-top: 16px; }
+.group h3 { font-size: 1rem; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font: inherit; font-weight: 600; font-size: 0.95rem;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  background: var(--paper); color: var(--ink); border: 2px solid transparent;
+}
+.chip:hover { border-color: var(--leaf-soft); }
+.chip:focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
+.chip[aria-pressed="true"] { background: var(--leaf); color: var(--white); }
+.chip[aria-pressed="true"]::before { content: "✓ "; }
+.chip.hidden { display: none; }
+.pantry-bottom { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 2px dashed var(--leaf-soft); }
+.count { font-weight: 700; }
+.clear { font: inherit; font-weight: 700; background: none; border: 2px solid var(--ink); color: var(--ink); padding: 8px 16px; border-radius: 12px; cursor: pointer; }
+.clear:focus-visible { outline: 3px solid var(--mustard); outline-offset: 2px; }
+.note { font-size: 0.9rem; color: var(--muted); margin: 10px 0 0; }
+
+.results h2 { font-size: 1.6rem; margin: 10px 0 4px; }
+.results .sub { color: var(--muted); margin: 0 0 18px; }
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px; }
+.recipe { background: var(--white); border-radius: 18px; padding: 18px; border-left: 8px solid var(--leaf-soft); }
+.recipe.ready { border-left-color: var(--leaf); }
+.recipe.close { border-left-color: var(--mustard); }
+.recipe h3 { font-size: 1.2rem; }
+.meta { color: var(--muted); font-size: 0.9rem; margin: 4px 0 12px; }
+.bar { height: 10px; background: var(--paper); border-radius: 99px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--mustard); }
+.recipe.ready .bar span { background: var(--leaf); }
+.score { font-weight: 700; font-size: 0.92rem; margin: 6px 0 10px; }
+.ing { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.ing li { font-size: 0.85rem; padding: 3px 10px; border-radius: 999px; }
+.ing .have { background: var(--leaf-soft); color: var(--leaf); font-weight: 700; }
+.ing .need { background: #FBE3DF; color: var(--tomato); }
+.empty { background: var(--white); border-radius: 18px; padding: 28px; text-align: center; color: var(--muted); }
+
+footer { padding: 26px 0 40px; color: var(--muted); font-size: 0.9rem; }
+@media (prefers-reduced-motion: no-preference) { .bar span { transition: width .4s ease; } }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M32 6c-6 4-8 10-6 16 6-1 10-6 6-16z" fill="#2E5E3A"/>
+      <path d="M33 22c4-6 10-7 14-5-2 6-8 8-14 5z" fill="#7FA36B"/>
+      <rect x="8" y="28" width="48" height="6" rx="3" fill="#1C2B20"/>
+      <path d="M12 34h40v14c0 6-5 10-11 10H23c-6 0-11-4-11-10z" fill="#E8B931"/>
+      <rect x="2" y="38" width="10" height="5" rx="2.5" fill="#1C2B20"/>
+      <rect x="52" y="38" width="10" height="5" rx="2.5" fill="#1C2B20"/>
+    </svg>
+    <span class="brand-name">Pantry Match</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>What's in your kitchen today?</h1>
+    <p>Tap the ingredients you have at home. Pantry Match checks 50 recipes from around the world and shows what you can cook right now, and what you're only one or two items away from.</p>
+  </section>
+
+  <section class="pantry" aria-label="Choose your ingredients">
+    <div class="pantry-top">
+      <h2>My ingredients</h2>
+      <input class="search" id="search" type="search" placeholder="Find an ingredient..." aria-label="Find an ingredient">
+    </div>
+    <div id="groups"></div>
+    <div class="pantry-bottom">
+      <span class="count" id="count">No ingredients selected</span>
+      <button class="clear" id="clear" type="button">Clear all</button>
+    </div>
+    <p class="note">Salt, black pepper, oil and water are counted as basics everyone has.</p>
+  </section>
+
+  <section class="results" aria-live="polite">
+    <h2 id="res-title">Recipes</h2>
+    <p class="sub" id="res-sub"></p>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Made by Atahan Arslan for GAST 4039 Information Technologies for Gastronomy, Task 3.
+</footer>
+
+<script>
+var recipes = [
+  ["Khachapuri", "Georgian", 60, ["flour", "yeast", "milk", "cheese", "egg", "butter"]],
+  ["Khinkali", "Georgian", 75, ["flour", "minced meat", "onion", "garlic", "coriander"]],
+  ["Pkhali", "Georgian", 30, ["spinach", "walnut", "garlic", "onion", "coriander"]],
+  ["Lobio", "Georgian", 50, ["beans", "onion", "garlic", "coriander"]],
+  ["Chakhokhbili", "Georgian", 55, ["chicken", "tomato", "onion", "garlic", "coriander", "butter"]],
+  ["Menemen", "Turkish", 15, ["egg", "tomato", "pepper", "onion"]],
+  ["Red lentil soup", "Turkish", 35, ["lentils", "onion", "carrot", "potato", "butter", "lemon"]],
+  ["Karniyarik", "Turkish", 60, ["eggplant", "minced meat", "onion", "tomato", "pepper", "garlic"]],
+  ["Kuru fasulye", "Turkish", 60, ["beans", "onion", "tomato paste", "butter"]],
+  ["Bulgur pilaf", "Turkish", 25, ["bulgur", "onion", "tomato paste", "pepper", "butter"]],
+  ["Cilbir", "Turkish", 15, ["egg", "yogurt", "garlic", "butter"]],
+  ["Imam bayildi", "Turkish", 60, ["eggplant", "onion", "tomato", "garlic", "parsley"]],
+  ["Manti", "Turkish", 90, ["flour", "egg", "minced meat", "onion", "yogurt", "garlic", "butter"]],
+  ["Kisir", "Turkish", 20, ["bulgur", "tomato paste", "parsley", "mint", "onion", "lemon"]],
+  ["Shakshuka", "Middle Eastern", 25, ["egg", "tomato", "pepper", "onion", "garlic"]],
+  ["Hummus", "Middle Eastern", 15, ["chickpeas", "garlic", "lemon", "tahini"]],
+  ["Falafel", "Middle Eastern", 40, ["chickpeas", "onion", "garlic", "parsley", "coriander", "flour"]],
+  ["Tabbouleh", "Middle Eastern", 20, ["bulgur", "parsley", "mint", "tomato", "lemon", "onion"]],
+  ["Spaghetti bolognese", "Italian", 50, ["pasta", "minced meat", "onion", "garlic", "tomato", "carrot"]],
+  ["Pasta pomodoro", "Italian", 20, ["pasta", "tomato", "garlic", "basil"]],
+  ["Margherita pizza", "Italian", 90, ["flour", "yeast", "tomato", "cheese", "basil"]],
+  ["Mushroom risotto", "Italian", 40, ["rice", "mushroom", "onion", "butter", "cheese"]],
+  ["Spaghetti carbonara", "Italian", 20, ["pasta", "egg", "cheese", "bacon"]],
+  ["Caprese salad", "Italian", 10, ["tomato", "cheese", "basil"]],
+  ["Minestrone", "Italian", 45, ["beans", "carrot", "potato", "zucchini", "tomato", "onion", "pasta"]],
+  ["Greek salad", "Greek", 10, ["tomato", "cucumber", "onion", "cheese", "pepper"]],
+  ["Tzatziki", "Greek", 10, ["yogurt", "cucumber", "garlic", "mint"]],
+  ["Moussaka", "Greek", 90, ["eggplant", "minced meat", "onion", "tomato", "potato", "milk", "flour", "butter"]],
+  ["Spanish omelette", "Spanish", 30, ["egg", "potato", "onion"]],
+  ["Gazpacho", "Spanish", 15, ["tomato", "cucumber", "pepper", "garlic", "bread"]],
+  ["Paella", "Spanish", 50, ["rice", "chicken", "shrimp", "pepper", "tomato", "garlic", "onion"]],
+  ["French onion soup", "French", 60, ["onion", "butter", "bread", "cheese"]],
+  ["Crepes", "French", 25, ["flour", "egg", "milk", "butter", "sugar"]],
+  ["Ratatouille", "French", 60, ["eggplant", "zucchini", "pepper", "tomato", "onion", "garlic"]],
+  ["Spinach quiche", "French", 60, ["flour", "butter", "egg", "cream", "cheese", "spinach"]],
+  ["Chicken fried rice", "Chinese", 20, ["rice", "egg", "chicken", "carrot", "onion", "soy sauce", "garlic"]],
+  ["Vegetable stir-fry", "Chinese", 15, ["carrot", "pepper", "cabbage", "mushroom", "soy sauce", "garlic", "ginger"]],
+  ["Chicken curry", "Indian", 45, ["chicken", "onion", "tomato", "garlic", "ginger", "yogurt", "curry powder"]],
+  ["Dal", "Indian", 35, ["lentils", "onion", "garlic", "ginger", "tomato", "curry powder"]],
+  ["Chana masala", "Indian", 35, ["chickpeas", "onion", "tomato", "garlic", "ginger", "curry powder"]],
+  ["Thai coconut soup", "Thai", 25, ["chicken", "coconut milk", "mushroom", "ginger", "lemon"]],
+  ["Teriyaki chicken", "Japanese", 30, ["chicken", "soy sauce", "honey", "garlic", "ginger", "rice"]],
+  ["Guacamole", "Mexican", 10, ["avocado", "tomato", "onion", "lemon", "coriander"]],
+  ["Chili con carne", "Mexican", 60, ["minced meat", "beans", "tomato", "onion", "garlic", "pepper", "corn"]],
+  ["Chicken quesadilla", "Mexican", 20, ["tortilla", "chicken", "cheese", "pepper", "onion"]],
+  ["Pancakes", "American", 20, ["flour", "egg", "milk", "butter", "sugar"]],
+  ["Mashed potatoes", "American", 30, ["potato", "milk", "butter"]],
+  ["Banana bread", "American", 70, ["banana", "flour", "egg", "sugar", "butter"]],
+  ["Oatmeal with banana", "British", 10, ["oats", "milk", "banana", "honey"]],
+  ["Apple crumble", "British", 50, ["apple", "flour", "butter", "sugar", "oats"]]
+];
+
+var groups = {
+  "Vegetables, fruit and herbs": ["onion", "garlic", "tomato", "pepper", "potato", "carrot", "spinach", "mushroom", "eggplant", "zucchini", "cucumber", "cabbage", "corn", "avocado", "lemon", "apple", "banana", "parsley", "coriander", "mint", "basil", "ginger"],
+  "Meat, fish and eggs": ["egg", "chicken", "minced meat", "bacon", "shrimp"],
+  "Dairy": ["milk", "butter", "cheese", "yogurt", "cream", "coconut milk"],
+  "Grains, legumes and pantry": ["flour", "yeast", "rice", "pasta", "bulgur", "oats", "bread", "tortilla", "lentils", "chickpeas", "beans", "walnut", "tahini", "tomato paste", "soy sauce", "curry powder", "sugar", "honey"]
+};
+
+var selected = [];
+
+function buildChips() {
+  var html = "";
+  for (var g in groups) {
+    html += '<div class="group"><h3>' + g + '</h3><div class="chips">';
+    groups[g].forEach(function (item) {
+      html += '<button type="button" class="chip" aria-pressed="false" data-item="' + item + '">' + item + '</button>';
+    });
+    html += '</div></div>';
+  }
+  document.getElementById("groups").innerHTML = html;
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () { toggle(chip); });
+  });
+}
+
+function toggle(chip) {
+  var item = chip.dataset.item;
+  var i = selected.indexOf(item);
+  if (i === -1) { selected.push(item); chip.setAttribute("aria-pressed", "true"); }
+  else { selected.splice(i, 1); chip.setAttribute("aria-pressed", "false"); }
+  update();
+}
+
+function update() {
+  var n = selected.length;
+  document.getElementById("count").textContent = n === 0 ? "No ingredients selected" : n + (n === 1 ? " ingredient selected" : " ingredients selected");
+
+  var list = document.getElementById("list");
+  var title = document.getElementById("res-title");
+  var sub = document.getElementById("res-sub");
+
+  if (n === 0) {
+    title.textContent = "Recipes";
+    sub.textContent = "";
+    list.innerHTML = '<div class="empty">Choose a few ingredients above to see which of the 50 recipes you can make.</div>';
+    return;
+  }
+
+  var scored = recipes.map(function (r) {
+    var have = r[3].filter(function (x) { return selected.indexOf(x) !== -1; });
+    return { name: r[0], cuisine: r[1], time: r[2], ing: r[3], have: have.length, missing: r[3].length - have.length };
+  }).filter(function (r) { return r.have > 0; });
+
+  scored.sort(function (a, b) { return a.missing - b.missing || b.have - a.have; });
+
+  var ready = scored.filter(function (r) { return r.missing === 0; }).length;
+  title.textContent = ready > 0 ? "You can cook " + ready + (ready === 1 ? " recipe" : " recipes") + " right now" : "Closest matches";
+  sub.textContent = "Sorted by how few ingredients you are missing. Green means you have it, red means you need it.";
+
+  if (scored.length === 0) {
+    list.innerHTML = '<div class="empty">None of the recipes use these ingredients yet. Add a basic like onion, egg or flour.</div>';
+    return;
+  }
+
+  list.innerHTML = scored.slice(0, 18).map(function (r) {
+    var cls = r.missing === 0 ? "ready" : (r.missing <= 2 ? "close" : "");
+    var pct = Math.round(r.have / r.ing.length * 100);
+    var label = r.missing === 0 ? "You have everything" : "Missing " + r.missing + " of " + r.ing.length;
+    var items = r.ing.map(function (x) {
+      return '<li class="' + (selected.indexOf(x) !== -1 ? "have" : "need") + '">' + x + '</li>';
+    }).join("");
+    return '<article class="recipe ' + cls + '"><h3>' + r.name + '</h3>' +
+      '<p class="meta">' + r.cuisine + ' cuisine, about ' + r.time + ' minutes</p>' +
+      '<div class="bar"><span style="width:' + pct + '%"></span></div>' +
+      '<p class="score">' + label + '</p><ul class="ing">' + items + '</ul></article>';
+  }).join("");
+}
+
+document.getElementById("search").addEventListener("input", function (e) {
+  var q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.classList.toggle("hidden", q !== "" && chip.dataset.item.indexOf(q) === -1);
+  });
+});
+
+document.getElementById("clear").addEventListener("click", function () {
+  selected = [];
+  document.querySelectorAll(".chip").forEach(function (chip) { chip.setAttribute("aria-pressed", "false"); });
+  update();
+});
+
+buildChips();
+update();
+</script>
+</body>
+</html>
